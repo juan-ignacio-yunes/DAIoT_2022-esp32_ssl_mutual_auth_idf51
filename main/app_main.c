@@ -23,10 +23,54 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-// Set your local broker URI
-#define BROKER_URI "mqtts://192.168.100.24:8883"
+#include "cJSON.h"
 
-static const char *TAG = "MQTTS_EXAMPLE";
+#define MUESTRA_X_SEGUNDOS 20
+
+static const char *TAG = "TP_Yunes";
+
+typedef struct {
+    esp_mqtt_client_handle_t client;
+} mqtt_task_params_t;
+
+static void http_get_task(void *pvParameters)
+{
+    mqtt_task_params_t *task_params = (mqtt_task_params_t *)pvParameters;
+    esp_mqtt_client_handle_t client = task_params->client;
+
+    while(1) {
+        float temperature = 0.0; // Temperatura fija en 0
+
+        ESP_LOGI(TAG, "Temperature: %.2f C", temperature);
+        ESP_LOGI(TAG, "MQTT_EVENT_ENVIAR");
+
+        // Crear un objeto JSON
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddNumberToObject(root, "dispositivoId", 1);
+        cJSON_AddStringToObject(root, "nombre", "ESP32_TEMPERATURA");
+        cJSON_AddStringToObject(root, "ubicacion", "Planta Baja");
+        cJSON_AddNumberToObject(root, "luz1", 0);
+        cJSON_AddNumberToObject(root, "luz2", 0);
+        cJSON_AddNumberToObject(root, "temperatura", temperature);
+        cJSON_AddNumberToObject(root, "humedad", 0.0);
+
+        // Convertir el objeto JSON a una cadena
+        const char *json_string = cJSON_Print(root);
+
+        // Publicar el JSON
+        esp_mqtt_client_publish(client, "/daiot", json_string, 0, 1, 0);
+
+        // Liberar la memoria utilizada por el objeto JSON
+        cJSON_Delete(root);
+        free((void*)json_string); // cJSON_Print uses malloc
+
+        // Esperar el tiempo definido antes de enviar la siguiente muestra
+        vTaskDelay(MUESTRA_X_SEGUNDOS * 1000 / portTICK_PERIOD_MS);
+    } 
+}
+
+// Set your local broker URI
+#define BROKER_URI "mqtts://192.168.100.24:1883"
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
@@ -52,6 +96,7 @@ static void log_error_if_nonzero(const char *message, int error_code)
  * @param event_id The id for the received event.
  * @param event_data The data for the event, esp_mqtt_event_handle_t.
  */
+
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%ld", base, event_id);
@@ -95,9 +140,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT) {
             log_error_if_nonzero("reported from esp-tls", event->error_handle->esp_tls_last_esp_err);
             log_error_if_nonzero("reported from tls stack", event->error_handle->esp_tls_stack_err);
-            log_error_if_nonzero("captured as transport's socket errno",  event->error_handle->esp_transport_sock_errno);
+            log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
             ESP_LOGI(TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
-
         }
         break;
     default:
@@ -120,6 +164,12 @@ static void mqtt_app_start(void)
     /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
+
+    mqtt_task_params_t task_params = {
+        .client = client
+    };
+
+    xTaskCreate(&http_get_task, "http_get_task", 4096, &task_params, 5, NULL);
 }
 
 void app_main(void)
