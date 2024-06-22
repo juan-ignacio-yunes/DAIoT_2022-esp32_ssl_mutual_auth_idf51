@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <math.h>
+
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -47,8 +49,8 @@ static void http_get_task(void *pvParameters)
         temperature = roundf(temperature * 100) / 100;
         humidity = roundf(humidity * 100) / 100;
 
-        ESP_LOGI(TAG, "Temperature: %.2f C", temperature);
-        ESP_LOGI(TAG, "Humedad: %.2f C", humidity);
+        ESP_LOGI(TAG, "Temperature: %.2f °C", temperature);
+        ESP_LOGI(TAG, "Humedad: %.2f %%", humidity);
         ESP_LOGI(TAG, "MQTT_EVENT_ENVIAR");
 
         // Crear un objeto JSON
