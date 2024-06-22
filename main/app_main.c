@@ -49,8 +49,11 @@ static void http_get_task(void *pvParameters)
         temperature = roundf(temperature * 100) / 100;
         humidity = roundf(humidity * 100) / 100;
 
-        ESP_LOGI(TAG, "Temperature: %.2f °C", temperature);
-        ESP_LOGI(TAG, "Humedad: %.2f %%", humidity);
+        ESP_LOGI(TAG, "dispositivoId: 10");
+        ESP_LOGI(TAG, "nombre: ESP32 Juan Yunes");
+        ESP_LOGI(TAG, "ubicacion: Living");
+        ESP_LOGI(TAG, "temperature: %.2f °C", temperature);
+        ESP_LOGI(TAG, "humedad: %.2f %%", humidity);
         ESP_LOGI(TAG, "MQTT_EVENT_ENVIAR");
 
         // Crear un objeto JSON
