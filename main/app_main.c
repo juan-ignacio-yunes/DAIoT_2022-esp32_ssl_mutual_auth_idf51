@@ -25,7 +25,7 @@
 
 #include "cJSON.h"
 
-#define MUESTRA_X_SEGUNDOS 20
+#define MUESTRA_X_SEGUNDOS 10
 
 static const char *TAG = "TP_Yunes";
 
@@ -38,19 +38,20 @@ static void http_get_task(void *pvParameters)
     mqtt_task_params_t *task_params = (mqtt_task_params_t *)pvParameters;
     esp_mqtt_client_handle_t client = task_params->client;
 
-    while(1) {
-        float temperature = 0.0; // Temperatura fija en 0
+    float temperature = 22.0;
+    float humidity = 60.0;
 
+
+    while(1) {
+        
         ESP_LOGI(TAG, "Temperature: %.2f C", temperature);
         ESP_LOGI(TAG, "MQTT_EVENT_ENVIAR");
 
         // Crear un objeto JSON
         cJSON *root = cJSON_CreateObject();
-        cJSON_AddNumberToObject(root, "dispositivoId", 1);
-        cJSON_AddStringToObject(root, "nombre", "ESP32_TEMPERATURA");
-        cJSON_AddStringToObject(root, "ubicacion", "Planta Baja");
-        cJSON_AddNumberToObject(root, "luz1", 0);
-        cJSON_AddNumberToObject(root, "luz2", 0);
+        cJSON_AddNumberToObject(root, "dispositivoId", 10);
+        cJSON_AddStringToObject(root, "nombre", "ESP32 Juan Yunes");
+        cJSON_AddStringToObject(root, "ubicacion", "Living");
         cJSON_AddNumberToObject(root, "temperatura", temperature);
         cJSON_AddNumberToObject(root, "humedad", 0.0);
 
@@ -63,6 +64,9 @@ static void http_get_task(void *pvParameters)
         // Liberar la memoria utilizada por el objeto JSON
         cJSON_Delete(root);
         free((void*)json_string); // cJSON_Print uses malloc
+
+        temperature += 0.1;
+        humidity += 0.1;
 
         // Esperar el tiempo definido antes de enviar la siguiente muestra
         vTaskDelay(MUESTRA_X_SEGUNDOS * 1000 / portTICK_PERIOD_MS);
