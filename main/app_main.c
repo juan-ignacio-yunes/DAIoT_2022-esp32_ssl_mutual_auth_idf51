@@ -27,7 +27,7 @@
 
 #define MUESTRA_X_SEGUNDOS 10
 
-static const char *TAG = "TP_Yunes";
+static const char *TAG = "ESP32-juan_yunes";
 
 typedef struct {
     esp_mqtt_client_handle_t client;
@@ -44,7 +44,11 @@ static void http_get_task(void *pvParameters)
 
     while(1) {
         
+        temperature = roundf(temperature * 100) / 100;
+        humidity = roundf(humidity * 100) / 100;
+
         ESP_LOGI(TAG, "Temperature: %.2f C", temperature);
+        ESP_LOGI(TAG, "Humedad: %.2f C", humidity);
         ESP_LOGI(TAG, "MQTT_EVENT_ENVIAR");
 
         // Crear un objeto JSON
@@ -53,7 +57,7 @@ static void http_get_task(void *pvParameters)
         cJSON_AddStringToObject(root, "nombre", "ESP32 Juan Yunes");
         cJSON_AddStringToObject(root, "ubicacion", "Living");
         cJSON_AddNumberToObject(root, "temperatura", temperature);
-        cJSON_AddNumberToObject(root, "humedad", 0.0);
+        cJSON_AddNumberToObject(root, "humedad", humidity);
 
         // Convertir el objeto JSON a una cadena
         const char *json_string = cJSON_Print(root);
@@ -74,7 +78,7 @@ static void http_get_task(void *pvParameters)
 }
 
 // Set your local broker URI
-#define BROKER_URI "mqtts://192.168.100.24:1883"
+#define BROKER_URI "mqtts://192.168.100.24:8883"
 
 extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
 extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
